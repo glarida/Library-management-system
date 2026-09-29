@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Management System</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f7fb;
+    color: #222;
+}
+
+header {
+    background: #173f5f;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.container {
+    width: 92%;
+    max-width: 1000px;
+    margin: 25px auto;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px #ccc;
+}
+
+.card h2 {
+    color: #173f5f;
+    margin-bottom: 8px;
+}
+
+.form-box, .table-box {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #ccc;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background: #173f5f;
+    color: white;
+    cursor: pointer;
+    margin: 4px;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.search {
+    margin-bottom: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background: #173f5f;
+    color: white;
+}
+
+.available {
+    color: green;
+    font-weight: bold;
+}
+
+.issued {
+    color: red;
+    font-weight: bold;
+}
+
+@media(max-width:700px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 7px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>📚 Library Management System</h1>
+    <p>Manage Books, Issue and Return</p>
+</header>
+
+<div class="container">
+
+    <div class="cards">
+        <div class="card">
+            <h2 id="totalBooks">0</h2>
+            <p>Total Books</p>
+        </div>
+
+        <div class="card">
+            <h2 id="availableBooks">0</h2>
+            <p>Available Books</p>
+        </div>
+
+        <div class="card">
+            <h2 id="issuedBooks">0</h2>
+            <p>Issued Books</p>
+        </div>
+    </div>
+
+    <div class="form-box">
+        <h2>Add New Book</h2>
+
+        <input type="text" id="bookName" placeholder="Enter Book Name">
+        <input type="text" id="authorName" placeholder="Enter Author Name">
+
+        <button onclick="addBook()">Add Book</button>
+    </div>
+
+    <div class="table-box">
+
+        <h2>Book List</h2>
+
+        <input class="search"
+               type="text"
+               id="search"
+               placeholder="Search book..."
+               onkeyup="displayBooks()">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Book</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="bookTable">
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<script>
+
+let books = JSON.parse(localStorage.getItem("libraryBooks")) || [
+    {
+        id: 1,
+        name: "Python Programming",
+        author: "John Smith",
+        status: "Available"
+    },
+    {
+        id: 2,
+        name: "Web Development",
+        author: "David Brown",
+        status: "Available"
+    }
+];
+
+function saveBooks() {
+    localStorage.setItem("libraryBooks", JSON.stringify(books));
+}
+
+function addBook() {
+
+    let name = document.getElementById("bookName").value;
+    let author = document.getElementById("authorName").value;
+
+    if (name === "" || author === "") {
+        alert("Please enter book name and author name");
+        return;
+    }
+
+    let newBook = {
+        id: books.length + 1,
+        name: name,
+        author: author,
+        status: "Available"
+    };
+
+    books.push(newBook);
+
+    saveBooks();
+
+    document.getElementById("bookName").value = "";
+    document.getElementById("authorName").value = "";
+
+    displayBooks();
+
+    alert("Book added successfully!");
+}
+
+function issueBook(id) {
+
+    let book = books.find(b => b.id === id);
+
+    if (book.status === "Available") {
+        book.status = "Issued";
+    }
+
+    saveBooks();
+    displayBooks();
+}
+
+function returnBook(id) {
+
+    let book = books.find(b => b.id === id);
+
+    if (book.status === "Issued") {
+        book.status = "Available";
+    }
+
+    saveBooks();
+    displayBooks();
+}
+
+function displayBooks() {
+
+    let searchValue =
+        document.getElementById("search").value.toLowerCase();
+
+    let table = document.getElementById("bookTable");
+
+    table.innerHTML = "";
+
+    books
+    .filter(book =>
+        book.name.toLowerCase().includes(searchValue) ||
+        book.author.toLowerCase().includes(searchValue)
+    )
+    .forEach(book => {
+
+        let row = document.createElement("tr");
+
+        let action =
+            book.status === "Available"
+            ?
+            `<button onclick="issueBook(${book.id})">
+                Issue
+             </button>`
+            :
+            `<button onclick="returnBook(${book.id})">
+                Return
+             </button>`;
+
+        row.innerHTML = `
+            <td>${book.id}</td>
+            <td>${book.name}</td>
+            <td>${book.author}</td>
+            <td class="${book.status === "Available" ? "available" : "issued"}">
+                ${book.status}
+            </td>
+            <td>${action}</td>
+        `;
+
+        table.appendChild(row);
+    });
+
+    updateCards();
+}
+
+function updateCards() {
+
+    document.getElementById("totalBooks").innerText =
+        books.length;
+
+    document.getElementById("availableBooks").innerText =
+        books.filter(book => book.status === "Available").length;
+
+    document.getElementById("issuedBooks").innerText =
+        books.filter(book => book.status === "Issued").length;
+}
+
+displayBooks();
+
+</script>
+
+</body>
+</html>
